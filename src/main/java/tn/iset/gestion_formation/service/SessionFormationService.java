@@ -54,6 +54,44 @@ public class SessionFormationService {
         return sessionFormationRepository.save(session);
     }
 
+    // Rechercher une session par son identifiant
+    @Transactional(readOnly = true)
+    public SessionFormation rechercherParId(Long id) {
+        return sessionFormationRepository.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Session introuvable"));
+    }
+
+    // Modifier une session existante
+    @Transactional
+    public SessionFormation modifier(
+            Long id,
+            String description,
+            LocalDate dateDebut,
+            LocalDate dateFin,
+            Long formateurId) {
+
+        SessionFormation session = rechercherParId(id);
+
+        Formateur formateur = formateurRepository.findById(formateurId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Formateur introuvable"));
+
+        session.setDescription(description);
+        session.setDateDebut(dateDebut);
+        session.setDateFin(dateFin);
+        session.setFormateur(formateur);
+
+        return sessionFormationRepository.save(session);
+    }
+
+    // Supprimer une session
+    @Transactional
+    public void supprimer(Long id) {
+        SessionFormation session = rechercherParId(id);
+        sessionFormationRepository.delete(session);
+    }
+
     // Rechercher les sessions par date
     public List<SessionFormation> rechercherParDate(LocalDate date) {
         return sessionFormationRepository.findByDateDebut(date);
