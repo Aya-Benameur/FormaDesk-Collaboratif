@@ -27,18 +27,28 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
 
-                // Pages publiques et ressources statiques
+                // Pages publiques
                 .requestMatchers(
-                    "/",
-                    "/login",
-                    "/403",
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
+                    "/", "/login", "/403",
+                    "/css/**", "/js/**", "/images/**",
                     "/h2-console/**"
                 ).permitAll()
 
-                // Pages de création et modification : ADMIN uniquement
+                // API REST : lecture pour USER et ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/**")
+                    .hasAnyRole("USER", "ADMIN")
+
+                // API REST : écriture réservée à ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/**")
+                    .hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.PUT, "/api/**")
+                    .hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.DELETE, "/api/**")
+                    .hasRole("ADMIN")
+
+                // Pages MVC réservées à ADMIN
                 .requestMatchers(
                     "/sessions/nouveau",
                     "/formateurs/nouveau",
@@ -47,7 +57,7 @@ public class SecurityConfig {
                     "/inscriptions/nouveau"
                 ).hasRole("ADMIN")
 
-                // Enregistrement : ADMIN uniquement
+                // Enregistrement MVC réservé à ADMIN
                 .requestMatchers(
                     HttpMethod.POST,
                     "/sessions/enregistrer",
@@ -57,33 +67,27 @@ public class SecurityConfig {
                     "/formateurs/supprimer/**"
                 ).hasRole("ADMIN")
 
-                // Toutes les autres pages nécessitent une connexion
+                // Autres pages : connexion obligatoire
                 .anyRequest().authenticated()
             )
 
-            // Formulaire de connexion
             .formLogin(Customizer.withDefaults())
-
-            // Authentification HTTP Basic
             .httpBasic(Customizer.withDefaults())
 
-            // Déconnexion
             .logout(logout -> logout
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
             )
 
-            // Gestion personnalisée des erreurs 403
             .exceptionHandling(exception -> exception
                 .accessDeniedPage("/403")
             )
 
-            // Protection de la console H2
+            // On conserve la protection CSRF
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
             )
 
-            // Autoriser les frames de la console H2
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             );
